@@ -5,10 +5,11 @@ import numpy as np
 import tensorflow as tf
 
 from .registry import register
+from .mask import MaskedDense
 
 
 @register("dense-300-100")
-def build_model(name="dense-300-100", l1_reg=0.0):
+def build_model(name="dense-300-100", masks={}, l1_reg=0.0):
     """
     Returns a sequential keras model of the following form:
     _________________________________________________________________
@@ -29,21 +30,23 @@ def build_model(name="dense-300-100", l1_reg=0.0):
         model = tf.keras.Sequential(
             [
                 tf.keras.layers.InputLayer(input_shape=(784,), name="input"),
-                tf.keras.layers.Dense(
+                MaskedDense(
                     300,
                     activation=tf.nn.relu,
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     bias_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=True,
                     name="hidden_1",
+                    mask=masks.get("hidden_1", None),
                 ),
-                tf.keras.layers.Dense(
+                MaskedDense(
                     100,
                     activation=tf.nn.relu,
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     bias_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=True,
                     name="hidden_2",
+                    mask=masks.get("hidden_2", None),
                 ),
                 tf.keras.layers.Dense(
                     10, activation=tf.nn.softmax, use_bias=False, name="output"
