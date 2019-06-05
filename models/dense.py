@@ -1,10 +1,14 @@
 """Model"""
 
-import tensorflow as tf
 import numpy as np
 
+import tensorflow as tf
 
-def build_model(name="dense_model", l1_reg=0.0):
+from .registry import register
+
+
+@register("dense-300-100")
+def build_model(name="dense-300-100", l1_reg=0.0):
     """
     Returns a sequential keras model of the following form:
     _________________________________________________________________
