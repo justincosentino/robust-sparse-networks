@@ -84,6 +84,15 @@ def init_flags():
         help="model's learning rate",
     )
     parser.add_argument(
+        "-l1",
+        "--l1_reg",
+        metavar="l1_reg",
+        type=float,
+        nargs=1,
+        default=[0.0],
+        help="l1 regularization penalty",
+    )
+    parser.add_argument(
         "--devices",
         metavar="devices",
         type=str,
@@ -111,6 +120,7 @@ def parse_args(args):
         "experiment": args.experiment[0],
         "base_dir": os.path.join(args.base_dir[0], args.dataset[0], args.model[0]),
         "learning_rate": args.learning_rate[0],
+        "l1_reg": args.l1_reg[0],
         "devices": args.devices[0],
         "force": args.force,
     }
