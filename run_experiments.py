@@ -13,6 +13,14 @@ def init_flags():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
+        "--trials",
+        metavar="trials",
+        type=int,
+        nargs=1,
+        default=[10],
+        help="number trials per experiment",
+    )
+    parser.add_argument(
         "--epochs",
         metavar="epochs",
         type=int,
@@ -121,6 +129,7 @@ def init_flags():
 def parse_args(args):
     """Parse provided args for runtime configuration."""
     hparams = {
+        "trials": args.trials[0],
         "epochs": args.epochs[0],
         "batch_size": args.batch_size[0],
         "valid_size": args.valid_size[0],
