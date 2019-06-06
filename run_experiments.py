@@ -128,7 +128,9 @@ def parse_args(args):
         "model": args.model[0],
         "experiment": args.experiment[0],
         "attack": args.attack[0],
-        "base_dir": os.path.join(args.base_dir[0], args.dataset[0], args.model[0]),
+        "base_dir": os.path.join(
+            args.base_dir[0], args.dataset[0], args.model[0], args.experiment[0]
+        ),
         "learning_rate": args.learning_rate[0],
         "l1_reg": args.l1_reg[0],
         "devices": args.devices[0],
