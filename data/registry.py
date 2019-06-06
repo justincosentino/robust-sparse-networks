@@ -13,6 +13,6 @@ def register(name):
     return add_to_dict
 
 
-def load_data(data_src):
+def get_loader(data_src):
     """Fetches the data loader function associated with the given data src"""
     return _LOADERS[data_src]

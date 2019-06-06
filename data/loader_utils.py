@@ -2,8 +2,10 @@
 Utilities used to load and preprocess MNIST keras datasets.
 """
 
+import numpy as np
 
-def load_from_keras(keras_dataset, num_valid=10000):
+
+def load_from_keras(keras_dataset, num_valid=10000, label_smoothing=0):
     """
     Loads images from a keras dataset, normalizes the images, and breaks them
     into train, validation, and test subsets.
@@ -13,7 +15,10 @@ def load_from_keras(keras_dataset, num_valid=10000):
 
     # Preprocess images and labels
     x_train, x_test = _preprocess_images(x_train), _preprocess_images(x_test)
-    y_train, y_test = _preprocess_labels(y_train), _preprocess_labels(y_test)
+    y_train, y_test = (
+        _preprocess_labels(y_train, label_smoothing=label_smoothing),
+        _preprocess_labels(y_test),
+    )
 
     # Further break training data into train / validation sets
     if num_valid < 0:
@@ -38,6 +43,10 @@ def _preprocess_images(images):
     return images
 
 
-def _preprocess_labels(labels):
-    """ Converts labels to float32. """
+def _preprocess_labels(labels, label_smoothing=0):
+    """Converts labels to one-hot float32. Smooths labels if specified"""
+    n_labels = np.max(labels) + 1
+    labels = np.eye(n_labels)[labels]
+    if label_smoothing:
+        labels -= label_smoothing * (labels - 1.0 / n_labels)
     return labels.astype("float32")
