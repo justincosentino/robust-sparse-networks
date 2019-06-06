@@ -60,7 +60,7 @@ def init_flags():
         type=str,
         nargs=1,
         default=["no_pruning"],
-        choices=["no_pruning"],
+        choices=["no_pruning", "reinit_random", "reinit_orig", "no_reinit"],
         help="the experiment to run",
     )
     base_dir_default = os.path.join(
@@ -73,6 +73,15 @@ def init_flags():
         nargs=1,
         default=[base_dir_default],
         help="base output directory for results and checkpoints",
+    )
+    parser.add_argument(
+        "--attack",
+        metavar="attack",
+        type=str,
+        nargs=1,
+        default=[None],
+        choices=[None, "fgsm", "pgd"],
+        help="adversarial attack used for training and evaluation",
     )
     parser.add_argument(
         "-lr",
@@ -118,6 +127,7 @@ def parse_args(args):
         "dataset": args.dataset[0],
         "model": args.model[0],
         "experiment": args.experiment[0],
+        "attack": args.attack[0],
         "base_dir": os.path.join(args.base_dir[0], args.dataset[0], args.model[0]),
         "learning_rate": args.learning_rate[0],
         "l1_reg": args.l1_reg[0],
