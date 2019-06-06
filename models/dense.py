@@ -31,6 +31,10 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
         layer: tf.constant_initializer(kernel) for layer, kernel in kernels.items()
     }
 
+    mask_initializers = {
+        layer: tf.constant_initializer(mask) for layer, mask in masks.items()
+    }
+
     with tf.name_scope(name=name):
         model = tf.keras.Sequential(
             [
@@ -44,7 +48,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="hidden_1",
-                    mask=masks.get("hidden_1", None),
+                    mask_initializer=mask_initializers.get("hidden_1", "ones"),
                 ),
                 MaskedDense(
                     100,
@@ -55,7 +59,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="hidden_2",
-                    mask=masks.get("hidden_2", None),
+                    mask_initializer=mask_initializers.get("hidden_2", "ones"),
                 ),
                 MaskedDense(
                     10,
@@ -66,7 +70,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="output",
-                    mask=masks.get("output", None),
+                    mask_initializer=mask_initializers.get("output", "ones"),
                 ),
             ]
         )

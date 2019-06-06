@@ -4,6 +4,7 @@ import numpy as np
 
 import tensorflow as tf
 from tensorflow.python.framework import common_shapes, ops, tensor_shape
+from tensorflow.python.keras import initializers
 from tensorflow.python.ops import gen_math_ops, nn
 
 
@@ -66,7 +67,7 @@ class MaskedDense(tf.keras.layers.Dense):
         activity_regularizer=None,
         kernel_constraint=None,
         bias_constraint=None,
-        mask=None,
+        mask_initializer="ones",
         **kwargs
     ):
 
@@ -83,29 +84,25 @@ class MaskedDense(tf.keras.layers.Dense):
             bias_constraint=bias_constraint,
             **kwargs
         )
-        self.mask_init = mask
+        self.mask_initializer = mask_initializer
 
     def build(self, input_shape):
         super(MaskedDense, self).build(input_shape)
 
-        if self.mask_init is None:
-            return
-
         input_shape = tensor_shape.TensorShape(input_shape)
         last_dim = tensor_shape.dimension_value(input_shape[-1])
 
-        mask_init = np.array(self.mask_init)
-        if mask_init.shape != self.kernel.get_shape():
-            raise ValueError(
-                "the provided mask dimenions do not match the kernel: got {}, expected {}".format(
-                    mask_init.shape, self.kernel.get_shape()
-                )
-            )
+        if self.mask_initializer is None or self.mask_initializer == "ones":
+            self.mask_initializer = tf.ones_initializer()
+        elif isinstance(self.mask_initializer, np.ndarray):
+            self.mask_initializer = tf.constant_initializer(self.mask_initializer)
+        else:
+            raise ValueError("invalid mask_initializer")
 
         self.mask = self.add_weight(
             "mask",
             shape=[last_dim, self.units],
-            initializer=tf.constant_initializer(mask_init),
+            initializer=self.mask_initializer,
             dtype=self.dtype,
             trainable=False,
         )
@@ -114,18 +111,9 @@ class MaskedDense(tf.keras.layers.Dense):
         inputs = tf.convert_to_tensor(inputs)
         rank = common_shapes.rank(inputs)
         if rank > 2:
-            # Broadcasting is required for the inputs.
-            outputs = standard_ops.tensordot(inputs, self.kernel, [[rank - 1], [0]])
-            # Reshape the output back to the original ndim of the input.
-            if not context.executing_eagerly():
-                shape = inputs.get_shape().as_list()
-                output_shape = shape[:-1] + [self.units]
-                outputs.set_shape(output_shape)
+            raise Exception("MaskedDense does not support rank > 2")
         else:
-            kernel = self.kernel
-            if self.mask_init is not None:
-                kernel = tf.multiply(self.kernel, self.mask)
-            outputs = gen_math_ops.mat_mul(inputs, kernel)
+            outputs = gen_math_ops.mat_mul(inputs, tf.multiply(self.kernel, self.mask))
         if self.use_bias:
             outputs = nn.bias_add(outputs, self.bias)
         if self.activation is not None:
@@ -133,6 +121,8 @@ class MaskedDense(tf.keras.layers.Dense):
         return outputs
 
     def get_config(self):
-        config = {"self.mask_init": self.mask_init}
+        config = {
+            "self.mask_initializer": initializers.serialize(self.mask_initializer)
+        }
         base_config = super(MaskedDense, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
