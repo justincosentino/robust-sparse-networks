@@ -42,7 +42,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                         "hidden_1", "glorot_uniform"
                     ),
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
-                    use_bias=True,
+                    use_bias=False,
                     name="hidden_1",
                     mask=masks.get("hidden_1", None),
                 ),
@@ -53,7 +53,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                         "hidden_2", "glorot_uniform"
                     ),
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
-                    use_bias=True,
+                    use_bias=False,
                     name="hidden_2",
                     mask=masks.get("hidden_2", None),
                 ),
