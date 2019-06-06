@@ -87,9 +87,15 @@ def init_flags():
         metavar="attack",
         type=str,
         nargs=1,
-        default=[None],
-        choices=[None, "fgsm", "pgd"],
+        default=["fgsm"],
+        choices=["fgsm", "pgd"],
         help="adversarial attack used for training and evaluation",
+    )
+    parser.add_argument(
+        "--adv_train",
+        action="store_true",
+        default=False,
+        help="use adversarial training for the given attack method",
     )
     parser.add_argument(
         "-lr",
@@ -137,6 +143,7 @@ def parse_args(args):
         "model": args.model[0],
         "experiment": args.experiment[0],
         "attack": args.attack[0],
+        "adv_train": args.adv_train,
         "base_dir": os.path.join(
             args.base_dir[0], args.dataset[0], args.model[0], args.experiment[0]
         ),
@@ -145,6 +152,9 @@ def parse_args(args):
         "devices": args.devices[0],
         "force": args.force,
     }
+    hparams["base_dir"] = os.path.join(
+        hparams["base_dir"], "adv_train" if hparams["adv_train"] else "normal"
+    )
     print("-" * 40, "hparams", "-" * 40)
     print("Beginning experiments using the following configuration:\n")
     for param, value in hparams.items():
