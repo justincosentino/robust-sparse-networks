@@ -57,8 +57,16 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     name="hidden_2",
                     mask=masks.get("hidden_2", None),
                 ),
-                tf.keras.layers.Dense(
-                    10, activation=tf.nn.softmax, use_bias=False, name="output"
+                MaskedDense(
+                    10,
+                    activation=tf.nn.softmax,
+                    kernel_initializer=kernel_initializers.get(
+                        "output", "glorot_uniform"
+                    ),
+                    kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
+                    use_bias=False,
+                    name="output",
+                    mask=masks.get("output", None),
                 ),
             ]
         )
