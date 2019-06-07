@@ -40,7 +40,7 @@ def save_array(filename, array_dict):
     tf.gfile.MakeDirs(filename)
 
     for k, v in array_dict.items():
-        with tf.gfile.FastGFile(os.path.join(filename, k + ".npy"), "w") as fp:
+        with tf.gfile.GFile(os.path.join(filename, k + ".npy"), "w") as fp:
             np.save(fp, v)
 
 
@@ -71,7 +71,7 @@ def restore_array(filename):
 
     for basename in tf.gfile.ListDirectory(filename):
         name = basename.split(".")[0]
-        with tf.gfile.FastGFile(os.path.join(filename, basename)) as fp:
+        with tf.gfile.GFile(os.path.join(filename, basename)) as fp:
             array_dict[name] = np.load(fp)
 
     return array_dict
