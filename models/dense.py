@@ -9,7 +9,9 @@ from .mask import MaskedDense
 
 
 @register("dense-300-100")
-def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
+def build_model(
+    name="dense-300-100", kernels={}, masks={}, l1_reg=0.0, show_summary=True
+):
     """
     Returns a sequential keras model of the following form:
     _________________________________________________________________
@@ -31,10 +33,6 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
         layer: tf.constant_initializer(kernel) for layer, kernel in kernels.items()
     }
 
-    mask_initializers = {
-        layer: tf.constant_initializer(mask) for layer, mask in masks.items()
-    }
-
     with tf.name_scope(name=name):
         model = tf.keras.Sequential(
             [
@@ -48,7 +46,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="hidden_1",
-                    mask_initializer=mask_initializers.get("hidden_1", "ones"),
+                    mask_initializer=masks.get("hidden_1", "ones"),
                 ),
                 MaskedDense(
                     100,
@@ -59,7 +57,7 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="hidden_2",
-                    mask_initializer=mask_initializers.get("hidden_2", "ones"),
+                    mask_initializer=masks.get("hidden_2", "ones"),
                 ),
                 MaskedDense(
                     10,
@@ -70,9 +68,10 @@ def build_model(name="dense-300-100", kernels={}, masks={}, l1_reg=0.0):
                     kernel_regularizer=tf.keras.regularizers.l1(l=l1_reg),
                     use_bias=False,
                     name="output",
-                    mask_initializer=mask_initializers.get("output", "ones"),
+                    mask_initializer=masks.get("output", "ones"),
                 ),
             ]
         )
-        model.summary()
+        if show_summary:
+            model.summary()
         return model
