@@ -145,16 +145,21 @@ def parse_args(args):
         "attack": args.attack[0],
         "adv_train": args.adv_train,
         "base_dir": os.path.join(
-            args.base_dir[0], args.dataset[0], args.model[0], args.experiment[0]
+            args.base_dir[0],
+            args.dataset[0],
+            args.model[0],
+            args.experiment[0],
+            args.attack[0],
         ),
         "learning_rate": args.learning_rate[0],
         "l1_reg": args.l1_reg[0],
         "devices": args.devices[0],
         "force": args.force,
     }
-    hparams["base_dir"] = os.path.join(
-        hparams["base_dir"], "adv_train" if hparams["adv_train"] else "normal"
+    exp_dir = "lr-{}_l1-{}_advtrain-{}".format(
+        hparams["learning_rate"], hparams["l1_reg"], str(hparams["adv_train"]).lower()
     )
+    hparams["base_dir"] = os.path.join(hparams["base_dir"], exp_dir)
     print("-" * 40, "hparams", "-" * 40)
     print("Beginning experiments using the following configuration:\n")
     for param, value in hparams.items():
