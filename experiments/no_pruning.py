@@ -21,7 +21,7 @@ def run_trial(trial, dataset, model_name, hparams):
         num_valid=10000, label_smoothing=0.1
     )
 
-    # Build and wrap model with cleverhans
+    # Build model
     model_builder = model_registry.get_builder(model_name)
     model = model_builder(l1_reg=hparams["l1_reg"])
 
