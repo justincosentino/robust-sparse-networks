@@ -92,7 +92,9 @@ class MaskedDense(tf.keras.layers.Dense):
         input_shape = tensor_shape.TensorShape(input_shape)
         last_dim = tensor_shape.dimension_value(input_shape[-1])
 
-        if self.mask_initializer is None or self.mask_initializer == "ones":
+        if self.mask_initializer is None or (
+            isinstance(self.mask_initializer, str) and self.mask_initializer == "ones"
+        ):
             self.mask_initializer = tf.ones_initializer()
         elif isinstance(self.mask_initializer, np.ndarray):
             self.mask_initializer = tf.constant_initializer(self.mask_initializer)
