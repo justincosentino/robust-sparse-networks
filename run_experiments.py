@@ -84,7 +84,7 @@ def init_flags():
         type=str,
         nargs=1,
         default=["no_pruning"],
-        choices=["no_pruning", "reinit_rand", "reinit_orig", "no_reinit"],
+        choices=["no_pruning", "reinit_rand", "reinit_orig", "reinit_none"],
         help="the experiment to run",
     )
     base_dir_default = os.path.join(
