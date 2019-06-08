@@ -1,1 +1,1 @@
-__all__ = ["dense", "prune"]
+__all__ = ["dense"]
