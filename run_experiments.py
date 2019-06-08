@@ -21,19 +21,35 @@ def init_flags():
         help="number trials per experiment",
     )
     parser.add_argument(
-        "--epochs",
-        metavar="epochs",
+        "--train_iters",
+        metavar="train_iters",
         type=int,
         nargs=1,
-        default=[10],
-        help="number of training epochs",
+        default=[50000],
+        help="number of training iterations",
+    )
+    parser.add_argument(
+        "--prune_iters",
+        metavar="prune_iters",
+        type=int,
+        nargs=1,
+        default=[30],
+        help="number of pruning iterations",
+    )
+    parser.add_argument(
+        "--eval_every",
+        metavar="eval_every",
+        type=int,
+        nargs=1,
+        default=[100],
+        help="number of iterations to eval on validation set",
     )
     parser.add_argument(
         "--batch_size",
         metavar="batch_size",
         type=int,
         nargs=1,
-        default=[128],
+        default=[60],
         help="batch size",
     )
     parser.add_argument(
@@ -68,7 +84,7 @@ def init_flags():
         type=str,
         nargs=1,
         default=["no_pruning"],
-        choices=["no_pruning", "reinit_random", "reinit_orig", "no_reinit"],
+        choices=["no_pruning", "reinit_rand", "reinit_orig", "no_reinit"],
         help="the experiment to run",
     )
     base_dir_default = os.path.join(
@@ -103,7 +119,7 @@ def init_flags():
         metavar="learning_rate",
         type=float,
         nargs=1,
-        default=[1e-3],
+        default=[0.0012],
         help="model's learning rate",
     )
     parser.add_argument(
@@ -136,7 +152,9 @@ def parse_args(args):
     """Parse provided args for runtime configuration."""
     hparams = {
         "trials": args.trials[0],
-        "epochs": args.epochs[0],
+        "train_iters": args.train_iters[0],
+        "prune_iters": args.prune_iters[0],
+        "eval_every": args.eval_every[0],
         "batch_size": args.batch_size[0],
         "valid_size": args.valid_size[0],
         "dataset": args.dataset[0],

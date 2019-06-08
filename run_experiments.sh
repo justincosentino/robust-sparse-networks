@@ -6,9 +6,10 @@ EXPERIMENTS=( "no_pruning" )
 MODEL="dense-300-100"
 DATASET="digits"
 TRIALS="10"
-EPOCHS="100"
-BATCH_SIZE="128"
-LEARNING_RATE="0.001"
+TRAIN_ITERS="50000"
+PRUNE_ITERS="50000"
+BATCH_SIZE="60"
+LEARNING_RATE="0.0012"
 DEVICES="1,2,3,4"
 
 
@@ -19,10 +20,10 @@ do
         for ATK in "${ATTACKS[@]}"
         do
             # without adv training
-            python -m robust-sparse-networks.run_experiments --model=$MODEL --dataset=$DATASET --trials=$TRIALS --epochs=$EPOCHS --batch_size=$BATCH_SIZE --learning_rate=$LEARNING_RATE --l1_reg=$L1 --attack=$ATK --devices=$DEVICES --experiment=$EXP
+            python -m robust-sparse-networks.run_experiments --model=$MODEL --dataset=$DATASET --trials=$TRIALS --train_iters=$TRAIN_ITERS --prune_iters=$PRUNE_ITERS --batch_size=$BATCH_SIZE --learning_rate=$LEARNING_RATE --l1_reg=$L1 --attack=$ATK --devices=$DEVICES --experiment=$EXP
 
             # with adv training
-            python -m robust-sparse-networks.run_experiments --model=$MODEL --dataset=$DATASET --trials=$TRIALS --epochs=$EPOCHS --batch_size=$BATCH_SIZE --learning_rate=$LEARNING_RATE --l1_reg=$L1 --attack=$ATK --devices=$DEVICES --experiment=$EXP --adv_train
+            python -m robust-sparse-networks.run_experiments --model=$MODEL --dataset=$DATASET --trials=$TRIALS --train_iters=$TRAIN_ITERS --prune_iters=$PRUNE_ITERS --batch_size=$BATCH_SIZE --learning_rate=$LEARNING_RATE --l1_reg=$L1 --attack=$ATK --devices=$DEVICES --experiment=$EXP --adv_train
         done
     done
 done
