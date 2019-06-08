@@ -8,21 +8,6 @@ import tensorflow as tf
 from ..models.mask import MaskedDense
 
 
-def init_experiment():
-    """Initialize seeds for reproducibility and get the current session"""
-    # Set TF random seed to improve reproducibility
-    tf.set_random_seed(1234)
-    # Force TensorFlow to use single thread to improve reproducibility
-    config = tf.ConfigProto(
-        intra_op_parallelism_threads=1, inter_op_parallelism_threads=1
-    )
-
-    # Create TF session and set as Keras backend session
-    sess = tf.Session(config=config)
-    tf.keras.backend.set_session(sess)
-    return sess
-
-
 def save_array(filename, array_dict):
     """
     Saves an numpy array.

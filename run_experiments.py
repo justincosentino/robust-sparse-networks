@@ -33,7 +33,7 @@ def init_flags():
         metavar="prune_iters",
         type=int,
         nargs=1,
-        default=[30],
+        default=[20],
         help="number of pruning iterations",
     )
     parser.add_argument(
@@ -178,6 +178,7 @@ def parse_args(args):
         hparams["learning_rate"], hparams["l1_reg"], str(hparams["adv_train"]).lower()
     )
     hparams["base_dir"] = os.path.join(hparams["base_dir"], exp_dir)
+    hparams["percents"] = {"hidden_1": 0.2, "hidden_2": 0.2, "output": 0.1}
     print("-" * 40, "hparams", "-" * 40)
     print("Beginning experiments using the following configuration:\n")
     for param, value in hparams.items():

@@ -1,38 +1,11 @@
-"""Tensorflow keras callbacks used to write network state to files."""
+"""
+Tensorflow keras callbacks used to write network state and results to files.
+"""
 import pandas as pd
 import tensorflow as tf
 
 from .path import *
 from .utils import *
-
-
-# class LogKernels(tf.keras.callbacks.Callback):
-#     """Saves kernels of masked layers as .npy files at the end of each epoch."""
-
-#     def __init__(self, base_dir, trial):
-#         super().__init__()
-#         self.base_dir = base_dir
-#         self.trial = trial
-
-#     def on_epoch_end(self, epoch, logs={}):
-#         save_array(
-#             get_kernels_path(self.base_dir, self.trial, epoch),
-#             get_masked_kernels(self.model),
-#         )
-
-
-# class LogMasks(tf.keras.callbacks.Callback):
-#     """Saves masks as .npy files at the end of each epoch."""
-
-#     def __init__(self, base_dir, trial):
-#         super().__init__()
-#         self.base_dir = base_dir
-#         self.trial = trial
-
-#     def on_epoch_end(self, epoch, logs={}):
-#         save_array(
-#             get_kernels_path(self.base_dir, self.trial, epoch), get_masks(self.model)
-#         )
 
 
 class EvalEvery(tf.keras.callbacks.Callback):
