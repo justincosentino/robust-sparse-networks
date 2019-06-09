@@ -56,7 +56,7 @@ def restore_array(filename):
 
     for basename in tf.gfile.ListDirectory(filename):
         name = basename.split(".")[0]
-        with tf.gfile.GFile(os.path.join(filename, basename)) as fp:
+        with tf.gfile.GFile(os.path.join(filename, basename), "rb") as fp:
             array_dict[name] = np.load(fp)
 
     return array_dict
