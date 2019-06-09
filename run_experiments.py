@@ -41,7 +41,7 @@ def init_flags():
         metavar="eval_every",
         type=int,
         nargs=1,
-        default=[100],
+        default=[500],
         help="number of iterations to eval on validation set",
     )
     parser.add_argument(
@@ -83,7 +83,7 @@ def init_flags():
         metavar="experiment",
         type=str,
         nargs=1,
-        default=["no_pruning"],
+        default=["reinit_orig"],
         choices=["no_pruning", "reinit_rand", "reinit_orig", "reinit_none"],
         help="the experiment to run",
     )
