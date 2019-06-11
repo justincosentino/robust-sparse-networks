@@ -48,11 +48,12 @@ def train_once(
     )
 
     # Save initial kernels and masks
+    init_kernels = get_masked_kernels(model)
+    masks = get_masks(model)
     save_array(
         get_kernels_path(hparams["base_dir"], trial, prune_iter, prefix="init"),
         init_kernels,
     )
-    masks = get_masks(model)
     save_array(get_masks_path(hparams["base_dir"], trial, prune_iter), masks)
 
     # Build attack method and get adv acc and loss
