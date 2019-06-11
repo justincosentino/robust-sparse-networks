@@ -1,5 +1,6 @@
-__all__ = ["attacks", "data", "experiments", "models"]
+__all__ = ["analysis", "attacks", "data", "experiments", "models"]
 
+from .analysis import *
 from .attacks import *
 from .data import *
 from .experiments import *
