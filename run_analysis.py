@@ -82,6 +82,9 @@ def init_flags():
         default=False,
         help="force analysis, deleting old anlysis dirs if existing.",
     )
+    parser.add_argument(
+        "--table", action="store_true", default=False, help="create results table"
+    )
     return parser.parse_args()
 
 
@@ -97,6 +100,7 @@ def parse_args(args):
         "l1_reg": args.l1_reg[0],
         "force": args.force,
         "experiments": EXPERIMENTS,
+        "table": args.table,
     }
     exp_dir = "lr-{}_l1-{}_advtrain-{}".format(
         hparams["learning_rate"], hparams["l1_reg"], str(hparams["adv_train"]).lower()
@@ -119,6 +123,36 @@ def parse_args(args):
         args.attack[0],
         exp_dir,
     )
+   
+    if args.table:
+        hparams["dataset"] = ["digits", "fashion"]
+        hparams["attack"] = ["fgsm", "pgd"]
+        hparams["adv_train"] = ['true', 'false']
+        hparams["target_iteration"] = 30000
+        hparams["table_output"] = args.base_dir[0]
+        # Loading all necessary hparams for rendering the table
+        hparams["experiments"] = []
+        hparams["base_dirs"] = {}
+        for dataset in ["digits", "fashion"]:
+            for attack in ["fgsm", "pgd"]:
+                for adv_training in ['true', 'false']:
+                    #Assumes lr, l1 and model have a single param choice
+                    table_exp_dir = "lr-{}_l1-{}_advtrain-{}".format(
+                        hparams["learning_rate"],
+                        hparams["l1_reg"],
+                        str(adv_training).lower(),
+                    )
+                    experiment_name = f'{dataset}_{attack}_{adv_training}'
+                    hparams["experiments"].append(experiment_name)
+                    hparams["base_dirs"][experiment_name] = os.path.join(
+                        args.base_dir[0],
+                        dataset,
+                        args.model[0],
+                        "reinit_orig",
+                        attack,
+                        table_exp_dir,
+                    )
+
     print("-" * 40, "hparams", "-" * 40)
     print("Beginning anlysis for the following experiments:\n")
     for param, value in hparams.items():
