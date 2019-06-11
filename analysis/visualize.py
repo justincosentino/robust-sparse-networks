@@ -11,8 +11,8 @@ matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-
 from ..experiments import path, utils
+from ..models import registry as model_registry
 
 
 sns.set_style(
@@ -29,17 +29,63 @@ sns.set_palette("deep")
 
 YLIMS = {
     "pgd": {"digits": (0.25, 0.65), "fashion": (0.0, 0.40)},
-    "fgsm": {"digits": (0.80, 0.99), "fashion": (0.70, 0.9)},
+    "fgsm": {"digits": (0.80, 0.99), "fashion": (0.70, 0.90)},
 }
 
 
 def run(hparams):
     exp_results = load_all_exp_results(hparams)
     plot_test_accuracies(hparams, exp_results)
+    generate_weight_distributions(hparams, exp_results)
 
 
-def generate_weight_distributions():
-    pass
+def generate_weight_distributions(
+    hparams, exp_results, filter_ids=["03.6", "16.9", "51.3", "100"]
+):
+
+    # Get experimental results corresponding to the filter_ids sparsities
+    filtered_results = {}
+    fixed_trial = "trial_00"
+    for experiment, results in exp_results.items():
+        for result_id, result in results.items():
+            if fixed_trial not in result_id:
+                continue
+            if result["sparsity"] not in filter_ids and (
+                "prune_iter_00" not in result_id and "100" in filter_ids
+            ):
+                continue
+            filtered_results[result_id] = result
+
+        fig, axes = plt.subplots(1, len(filter_ids), figsize=(5 * len(filter_ids), 5))
+        for i, item in enumerate(sorted(filtered_results.items())):
+            result_id, result = item
+            if result["init_kernels"] == {}:
+                model_builder = model_registry.get_builder(hparams["model"])
+                model = model_builder(kernels={}, show_summary=False)
+                result["init_kernels"] = utils.get_masked_kernels(model)
+            masked_kernels = utils.apply_masks(result["init_kernels"], result["masks"])
+            for layer, kernel in sorted(result["init_kernels"].items()):
+                mask = result["masks"][layer]
+                active_kernel = kernel[mask == 1]
+                plot = sns.distplot(
+                    pd.DataFrame(active_kernel.flatten()),
+                    hist=False,
+                    ax=axes[i],
+                    kde_kws={"linewidth": 3},
+                )
+                plot.set(xlabel="Initial Active Weights", ylabel="Density")
+                plot.set_title("{}% Remaining".format(result["sparsity"]))
+                plot.set(xlim=(-2.5, 2.5))
+
+                if result["sparsity"] != "100.0":
+                    plot.set(ylim=(0, 4.5))
+
+        file_path = os.path.join(
+            hparams["analysis_dir"], "dists_{}.svg".format(experiment)
+        )
+        fig.savefig(file_path, format="svg", bbox_inches="tight")
+        plt.clf()
+        print("Saving figure to ", file_path)
 
 
 def get_masks_stats(masks):
@@ -85,15 +131,15 @@ def load_all_exp_results(hparams):
                 results[key]["init_kernels"] = init_kernels
                 results[key]["post_kernels"] = post_kernels
 
-        for key, value in sorted(results.items()):
-            print(
-                "{}: {} -> {:6.3f} | {:6.3f}".format(
-                    key,
-                    value["sparsity"],
-                    value["test_acc_log"]["acc"].iloc[-1],
-                    value["test_acc_log"]["adv_acc"].iloc[-1],
-                )
-            )
+        # for key, value in sorted(results.items()):
+        #     print(
+        #         "{}: {} -> {:6.3f} | {:6.3f}".format(
+        #             key,
+        #             value["sparsity"],
+        #             value["test_acc_log"]["acc"].iloc[-1],
+        #             value["test_acc_log"]["adv_acc"].iloc[-1],
+        #         )
+        #     )
 
         all_results[experiment] = results
 
@@ -119,7 +165,7 @@ def plot_test_accuracies(
             del results["{}/prune_iter_00".format(trial)]
     unpruned_test_acc = pd.concat(unpruned_test_acc).groupby(level=0).mean()
 
-    reinit_label = " (reinit)"
+    reinit_label = " (random)"
     for metric in metrics:
         accs = {}
         for experiment, results in exp_results.items():
