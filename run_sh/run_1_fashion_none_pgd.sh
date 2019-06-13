@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-L1_REGS=( "0.0" "0.01" "0.001" "0.0001")
-ATTACKS=( "fgsm" "pgd" )
-EXPERIMENTS=( "no_pruning" )
+L1_REGS=( "0.0" )
+ATTACKS=( "pgd" )
+EXPERIMENTS=( "reinit_none" )
 
 MODEL="dense-300-100"
-DATASET="digits"
-TRIALS="10"
+DATASET="fashion"
+TRIALS="4"
 TRAIN_ITERS="50000"
-PRUNE_ITERS="50000"
+PRUNE_ITERS="20"
 BATCH_SIZE="60"
 LEARNING_RATE="0.0012"
-DEVICES="1,2,3,4"
+DEVICES="1"
 
 
 for EXP in "${EXPERIMENTS[@]}"
