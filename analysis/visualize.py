@@ -35,8 +35,9 @@ YLIMS = {
 
 def run(hparams):
     exp_results = load_all_exp_results(hparams)
-    plot_test_accuracies(hparams, exp_results)
+    # plot_test_accuracies(hparams, exp_results)
     generate_weight_distributions(hparams, exp_results)
+    # plot_early_stoping(hparams, exp_results)
 
 
 def generate_weight_distributions(
@@ -177,13 +178,15 @@ def plot_test_accuracies(
                     reinit_label if experiment == "reinit_rand" else "",
                 )
                 accs[label] = value["test_acc_log"][metric["metric"]]
-        accs["100"] = unpruned_test_acc[metric["metric"]]
+        accs["100.0"] = unpruned_test_acc[metric["metric"]]
 
         current_palette = sns.color_palette()
         palette = {
             k: current_palette[filter_ids.index(k.strip(reinit_label))] for k in accs
         }
-        dashes = {k: (1, 1) if (reinit_label in k or k == "100") else "" for k in accs}
+        dashes = {
+            k: (1, 1) if (reinit_label in k or k == "100.0") else "" for k in accs
+        }
 
         accs["iterations"] = value["test_acc_log"]["batch"]
         data_frame = pd.DataFrame.from_dict(accs).set_index("iterations")
