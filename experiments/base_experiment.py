@@ -1,5 +1,6 @@
 import os
 
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
 
 from ..attacks import registry as attack_registry
@@ -9,8 +10,6 @@ from .callbacks import *
 from .path import *
 from .registry import register
 from .utils import *
-
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 def init_experiment():
@@ -102,6 +101,7 @@ def train_once(
         validation_data=(x_valid, y_valid),
         shuffle=True,
         callbacks=[log_data],
+        verbose=2,
     )
 
     # TODO save test eval results?
