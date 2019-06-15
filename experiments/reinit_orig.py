@@ -11,6 +11,7 @@ def run_trial(trial, dataset, model_name, hparams):
     )
     kernels = copy.deepcopy(init_kernels)
     for prune_iter in range(1, hparams["prune_iters"] + 1):
+        print("starting trial_{}/prune_iter{}".format(trial, prune_iter))
 
         masks = prune_by_percent(kernels, masks, percents=hparams["percents"])
 
