@@ -84,7 +84,9 @@ def get_masks(model):
         if len(weights) == 1:
             # No masks applied
             continue
-        masks[layer.name] = weights[1]
+        # Using -1 because we might have biases
+        masks[layer.name] = weights[-1]
+
     return masks
 
 
