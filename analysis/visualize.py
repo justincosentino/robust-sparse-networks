@@ -257,17 +257,17 @@ def produce_tables(
                 if value["test_acc_log"]["acc"][target_iteration] is None or value["test_acc_log"]["adv_acc"][target_iteration] is None:
                     continue
 
-                table[dataset][sparsity]['normal'][adv_training] = round(value["test_acc_log"]["acc"][target_iteration], 2)
-                table[dataset][sparsity][attack][adv_training] = round(value["test_acc_log"]["adv_acc"][target_iteration], 2)
+                table[dataset][sparsity]['normal'][adv_training] = round(value["test_acc_log"]["acc"][target_iteration]* 100, 2) 
+                table[dataset][sparsity][attack][adv_training] = round(value["test_acc_log"]["adv_acc"][target_iteration]* 100, 2) 
 
     for dataset in table:
         data_for_pandas = {}
         for sparsity in table[dataset]:
             column = table[dataset][sparsity]
             data_for_pandas[sparsity] = [
-                f"{column['normal']['false']}/{column['normal']['true']}",
-                f"{column['fgsm']['false']}/{column['fgsm']['true']}",
-                f"{column['pgd']['false']}/{column['pgd']['true']}",
+                f"{column['normal']['false']} / {column['normal']['true']}",
+                f"{column['fgsm']['false']} / {column['fgsm']['true']}",
+                f"{column['pgd']['false']} / {column['pgd']['true']}",
                 ]
     
         df_for_latex = pd.DataFrame.from_dict(data_for_pandas, orient='index', columns=['Natural Images', 'FGSM', 'PGD'])
