@@ -123,7 +123,8 @@ def parse_args(args):
         args.attack[0],
         exp_dir,
     )
-   
+    
+    # Prepare hyperparameters for producing the tables 
     if args.table:
         hparams["dataset"] = ["digits", "fashion"]
         hparams["attack"] = ["fgsm", "pgd"]

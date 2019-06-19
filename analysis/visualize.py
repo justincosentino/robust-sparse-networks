@@ -214,52 +214,56 @@ def prune_iter_iterator(hparams, experiment, trial_dir):
             if entry.is_dir():
                 yield entry.name
 
+
 def print_all_keys(dictionary, parent_keys=""):
+    """
+    Auxiliary function to facilitate understanding by recursively printing all keys
+    in a dictionary.
+    """
     for key in dictionary:
         print(parent_keys, key)
         if isinstance(dictionary[key], dict):
-            print_all_keys(dictionary[key], '{} {}'.format(parent_keys, key))
+            print_all_keys(dictionary[key], "{} {}".format(parent_keys, key))
+
 
 def produce_tables(
-    hparams,
-    exp_results,
-    filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"],
-    ):
-
-    # print_all_keys(exp_results)
-
-    # Create dictionary for latex tables
+    hparams, exp_results, filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"]
+):
+    # Create dictionary for latex tables to easily insert data by index
     table = {}
     for dataset in hparams["dataset"]:
         table[dataset] = {}
         for sparsity in filter_ids:
             table[dataset][sparsity] = {}
-            for attack in ['normal', 'fgsm', 'pgd']:
+            for attack in ["normal", "fgsm", "pgd"]:
                 table[dataset][sparsity][attack] = {}
                 table[dataset][sparsity][attack] = {}
                 table[dataset][sparsity][attack] = {}
-                # for adv_training in ['true', 'false']:
-                #     table[dataset][sparsity][attack][adv_training] = None
 
+    # Get data from experiment results and insert them in the table by index
     for experiment, results in exp_results.items():
-            for key, value in sorted(results.items()):
-                if filter_ids is not None and value["sparsity"] not in filter_ids:
-                    continue
-                
-                sparsity = value["sparsity"]
+        for key, value in sorted(results.items()):
+            if filter_ids is not None and value["sparsity"] not in filter_ids:
+                continue
+            sparsity = value["sparsity"]
+            iterations = value["test_acc_log"]["batch"]
+            target_iteration = pd.Index(iterations).get_loc(hparams["target_iteration"])
+            dataset, attack, adv_training = tuple(experiment.split("_"))
+            if (
+                value["test_acc_log"]["acc"][target_iteration] is None
+                or value["test_acc_log"]["adv_acc"][target_iteration] is None
+            ):
+                continue
 
-                iterations = value["test_acc_log"]["batch"]
-                target_iteration = pd.Index(iterations).get_loc(hparams["target_iteration"])
+            table[dataset][sparsity]["normal"][adv_training] = round(
+                value["test_acc_log"]["acc"][target_iteration] * 100, 2
+            )
+            table[dataset][sparsity][attack][adv_training] = round(
+                value["test_acc_log"]["adv_acc"][target_iteration] * 100, 2
+            )
 
-                dataset, attack, adv_training = tuple(experiment.split("_"))  
-
-
-                if value["test_acc_log"]["acc"][target_iteration] is None or value["test_acc_log"]["adv_acc"][target_iteration] is None:
-                    continue
-
-                table[dataset][sparsity]['normal'][adv_training] = round(value["test_acc_log"]["acc"][target_iteration]* 100, 2) 
-                table[dataset][sparsity][attack][adv_training] = round(value["test_acc_log"]["adv_acc"][target_iteration]* 100, 2) 
-
+    # Re-format dictionary into expected input for Pandas.DataFrame.from_dict
+    # Then create DataFrame and produce the latex table
     for dataset in table:
         data_for_pandas = {}
         for sparsity in table[dataset]:
@@ -268,21 +272,18 @@ def produce_tables(
                 f"{column['normal']['false']} / {column['normal']['true']}",
                 f"{column['fgsm']['false']} / {column['fgsm']['true']}",
                 f"{column['pgd']['false']} / {column['pgd']['true']}",
-                ]
-    
-        df_for_latex = pd.DataFrame.from_dict(data_for_pandas, orient='index', columns=['Natural Images', 'FGSM', 'PGD'])
-        df_for_latex.insert(loc=0, column='Sparsity', value=df_for_latex.index)
+            ]
+
+        df_for_latex = pd.DataFrame.from_dict(
+            data_for_pandas, orient="index", columns=["Natural Images", "FGSM", "PGD"]
+        )
+        df_for_latex.insert(loc=0, column="Sparsity", value=df_for_latex.index)
         df_for_latex.index = df_for_latex.index.astype(float)
         df_for_latex = df_for_latex.sort_index(ascending=False)
         latex_table = df_for_latex.to_latex(index=False)
 
-        latex_output = os.path.join(
-                                    hparams["table_output"], "tables"
-                                )
-        print('Tables in', latex_output)
-        with open(os.path.join(latex_output, f'{dataset}.txt'), 'w') as f:
+        latex_output = os.path.join(hparams["table_output"], "tables")
+        print("Tables in", latex_output)
+        with open(os.path.join(latex_output, f"{dataset}.txt"), "w") as f:
             f.write(latex_table)
-                    
-
-    
 
