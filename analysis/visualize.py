@@ -36,8 +36,8 @@ YLIMS = {
 def run(hparams):
     exp_results = load_all_exp_results(hparams)
     # plot_test_accuracies(hparams, exp_results)
-    generate_weight_distributions(hparams, exp_results)
-    # plot_early_stoping(hparams, exp_results)
+    # generate_weight_distributions(hparams, exp_results)
+    plot_early_stoping(hparams, exp_results)
     if hparams["table"]:
         produce_tables(hparams, exp_results)
 
@@ -155,8 +155,9 @@ def plot_test_accuracies(
     metrics=[
         {"metric": "acc", "label": "Test Accuracy"},
         {"metric": "adv_acc", "label": "Adversarial Test Accuracy"},
+        {"metric": "loss", "label": "Test Loss"},
     ],
-    filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100"],
+    filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"],
 ):
     # Average unpruned results
     unpruned_test_acc = []
@@ -199,7 +200,7 @@ def plot_test_accuracies(
             data=data_frame[filter_ids], ax=axes[0], dashes=dashes, palette=palette
         )
         left.set(xlim=(0, 30000))
-        left.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
+        # left.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
         left.set(xlabel="Training Iterations", ylabel=metric["label"])
         left.get_legend().remove()
 
@@ -336,3 +337,75 @@ def produce_tables(
         with open(os.path.join(latex_output, f"{dataset}.txt"), "w") as f:
             f.write(latex_table)
 
+
+def get_early_stop_iteration(value):
+    losses = value["valid_acc_log"]["loss"]
+    target_iteration = pd.Series(losses).idxmin()
+    early_stop_iteration = value["valid_acc_log"]["batch"][target_iteration]
+    return early_stop_iteration
+
+
+def plot_early_stoping(
+    hparams, exp_results, filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"]
+):
+
+    # Merge unpruned results
+    unpruned_early_stop_iter = []
+    for experiment, results in exp_results.items():
+        for trial in trial_iterator(hparams, experiment):
+            for label in exp_results:
+                unpruned_early_stop_iter.append(
+                    (
+                        "100.0",
+                        label,
+                        get_early_stop_iteration(
+                            results["{}/prune_iter_00".format(trial)]
+                        ),
+                    )
+                )
+            del results["{}/prune_iter_00".format(trial)]
+
+    # Builds a list of tuples (sparsity, experiment, early_stop_iteration)
+    # for creating the DataFrame
+    early_stop_iter = []
+    for experiment, results in exp_results.items():
+        for key, value in sorted(results.items()):
+            if filter_ids is not None and value["sparsity"] not in filter_ids:
+                continue
+            label = experiment
+            sparsity = value["sparsity"]
+            early_stop_iteration = get_early_stop_iteration(value)
+            early_stop_iter.append((sparsity, label, early_stop_iteration))
+
+    early_stop_iter.extend(unpruned_early_stop_iter)
+
+    data_frame = pd.DataFrame(
+        early_stop_iter, columns=["Sparsity", "Experiment", "Iteration"]
+    )
+    sorted_index = pd.Series.argsort(data_frame["Sparsity"].astype(float))[::-1]
+    data_frame = data_frame.iloc[sorted_index]
+
+    fig, axes = plt.subplots(figsize=(14, 5))
+
+    left = sns.lineplot(
+        x="Sparsity",
+        y="Iteration",
+        hue="Experiment",
+        ci="sd",
+        err_style="bars",
+        err_kws={"capsize": 3},
+        sort=False,
+        data=data_frame,
+    )
+    left.set(
+        xlabel="Percent of Weights Remaining", ylabel="Early Stop Iteration (Val.)"
+    )
+
+    plt.tight_layout()
+
+    file_name = "test_{}.svg".format("early_stop_iteration")
+    file_path = os.path.join(hparams["analysis_dir"], file_name)
+
+    fig.savefig(file_path, format="svg", bbox_inches="tight")
+    plt.clf()
+    print("Saving figure to ", file_path)

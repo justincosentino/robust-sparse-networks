@@ -5,7 +5,7 @@ import shutil
 
 from .analysis import visualize
 
-EXPERIMENTS = ["reinit_rand", "reinit_orig"]
+EXPERIMENTS = ["reinit_rand", "reinit_orig"] #["no_pruning", "reinit_rand", "reinit_orig", "reinit_none"]
 
 
 def init_flags():
