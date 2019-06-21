@@ -28,16 +28,39 @@ sns.set_palette("deep")
 
 
 YLIMS = {
-    "pgd": {"digits": (0.25, 0.65), "fashion": (0.0, 0.40)},
-    "fgsm": {"digits": (0.80, 0.99), "fashion": (0.70, 0.90)},
-}
+        "pgd": {
+            "digits": {
+                "acc": (0.25, 0.65),
+                "adv_acc": (0.25, 0.65),
+                "loss": (0.0, 1.5),
+            },
+            "fashion": {
+                "acc": (0.0, 0.40),
+                "adv_acc": (0.0, 0.40),
+                "loss": (0.0, 1.5),
+            },
+        },
+        "fgsm": {
+            "digits": {
+                "acc": (0.80, 0.99),
+                "adv_acc": (0.80, 0.99),
+                "loss": (0.0, 1.5),
+            },
+            "fashion": {
+                "acc": (0.70, 0.90),
+                "adv_acc": (0.70, 0.90),
+                "loss": (0.0, 1.5),
+            },
+        },
+    }
+
 
 
 def run(hparams):
     exp_results = load_all_exp_results(hparams)
-    # plot_test_accuracies(hparams, exp_results)
+    plot_test_accuracies(hparams, exp_results)
     # generate_weight_distributions(hparams, exp_results)
-    plot_early_stoping(hparams, exp_results)
+    # plot_early_stoping(hparams, exp_results)
     if hparams["table"]:
         produce_tables(hparams, exp_results)
 
@@ -167,72 +190,103 @@ def plot_test_accuracies(
                 results["{}/prune_iter_00".format(trial)]["test_acc_log"]
             )
             del results["{}/prune_iter_00".format(trial)]
-    unpruned_test_acc = pd.concat(unpruned_test_acc).groupby(level=0).mean()
+    unpruned_test_acc = pd.DataFrame(pd.concat(unpruned_test_acc))#.groupby(level=0)#.mean()
+    unpruned_test_acc = unpruned_test_acc.reset_index(drop=True)
+    unpruned_test_acc['Experiment'] = "100.0"
 
-    reinit_label = " (random)"
+    test_acc = []
+    for experiment, results in exp_results.items():
+        for key, value in sorted(results.items()):
+            if filter_ids is not None and value["sparsity"] not in filter_ids:
+                continue
+            label = "{} ({})".format(
+                value["sparsity"],
+                experiment,
+            )
+            data = value["test_acc_log"]
+            data['Experiment'] = label
+            test_acc.append(data)
+    test_acc = pd.DataFrame(pd.concat(test_acc))
+    test_acc = pd.concat([test_acc, unpruned_test_acc])
+
+    labels = test_acc['Experiment'].unique()
+    
+    current_palette = sns.color_palette()
+    palette = {
+        k: current_palette[filter_ids.index(k.split(" ")[0])] for k in labels
+    }
+    dashes = {
+        k: (1, 1) if ("rand" in k) else (2, 2) if ("none" in k) else "" for k in labels
+    }
+    
     for metric in metrics:
-        accs = {}
-        for experiment, results in exp_results.items():
-            for key, value in sorted(results.items()):
-                if filter_ids is not None and value["sparsity"] not in filter_ids:
-                    continue
-                label = "{}{}".format(
-                    value["sparsity"],
-                    reinit_label if experiment == "reinit_rand" else "",
-                )
-                accs[label] = value["test_acc_log"][metric["metric"]]
-        accs["100.0"] = unpruned_test_acc[metric["metric"]]
+        fig, axes = plt.subplots(1, 3, figsize=(21, 5))
 
-        current_palette = sns.color_palette()
-        palette = {
-            k: current_palette[filter_ids.index(k.strip(reinit_label))] for k in accs
-        }
-        dashes = {
-            k: (1, 1) if (reinit_label in k or k == "100.0") else "" for k in accs
-        }
-
-        accs["iterations"] = value["test_acc_log"]["batch"]
-        data_frame = pd.DataFrame.from_dict(accs).set_index("iterations")
-
-        fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-
+        exp_filter = np.logical_or(test_acc['Experiment'].str.contains("orig"), test_acc['Experiment'] == "100.0")
+        left_data = test_acc[exp_filter]
         left = sns.lineplot(
-            data=data_frame[filter_ids], ax=axes[0], dashes=dashes, palette=palette
+            x="batch", y=metric["metric"], data=left_data, ax=axes[0], hue="Experiment", style="Experiment", dashes=dashes, palette=palette
         )
         left.set(xlim=(0, 30000))
-        # left.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
+        left.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]][metric["metric"]])
         left.set(xlabel="Training Iterations", ylabel=metric["label"])
         left.get_legend().remove()
 
+        exp_filter = np.logical_and(np.logical_not(test_acc['Experiment'].str.contains("none")), test_acc['Experiment'] != "100.0")
+        right_data = test_acc[exp_filter]
         right = sns.lineplot(
-            data=data_frame.loc[:, data_frame.columns != "100"],
+            x="batch",
+            y=metric["metric"],
+            data=right_data,
             ax=axes[1],
+            hue="Experiment",
+            style="Experiment",
             dashes=dashes,
             palette=palette,
         )
         right.set(xlim=(0, 30000))
-        right.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
+        right.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]][metric["metric"]])
         right.set(xlabel="Training Iterations", ylabel=metric["label"])
         right.get_legend().remove()
 
+        exp_filter = np.logical_and(np.logical_not(test_acc['Experiment'].str.contains("rand")), test_acc['Experiment'] != "100.0")
+        third_data = test_acc[exp_filter]
+        third = sns.lineplot(
+            x="batch",
+            y=metric["metric"],
+            data=third_data,
+            ax=axes[2],
+            hue="Experiment",
+            style="Experiment",
+            dashes=dashes,
+            palette=palette,
+        )
+        third.set(xlim=(0, 30000))
+        third.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]][metric["metric"]])
+        third.set(xlabel="Training Iterations", ylabel=metric["label"])
+        third.get_legend().remove()
+        
+        
         def parse_legend(x):
-            return float(x[0].strip(reinit_label)) + (
-                100 if reinit_label in x[0] else 0
+            return float(x[0].split(" ")[0]) + (
+                100 if "orig" not in x[0] else 0
             )
 
         left_handles, left_labels = left.get_legend_handles_labels()
         right_handles, right_labels = right.get_legend_handles_labels()
-        handles = left_handles + right_handles
-        labels = left_labels + right_labels
+        third_handles, third_labels = third.get_legend_handles_labels()
+        handles = left_handles[1:] + right_handles[1:] + third_handles[1:]
+        legend_labels = left_labels[1:] + right_labels[1:] + third_labels[1:]
+
         by_label = collections.OrderedDict(
-            sorted(zip(labels, handles), key=parse_legend)
+            sorted(zip(legend_labels, handles), key=parse_legend)
         )
         fig.legend(
             by_label.values(),
             by_label.keys(),
             bbox_to_anchor=(0, 1.0, 1.0, 0.05),
             loc="lower center",
-            ncol=11,
+            ncol=8,
             mode="expand",
             borderaxespad=0.0,
             frameon=False,
