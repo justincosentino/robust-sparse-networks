@@ -58,9 +58,9 @@ YLIMS = {
 
 def run(hparams):
     exp_results = load_all_exp_results(hparams)
-    plot_test_accuracies(hparams, exp_results)
+    # plot_test_accuracies(hparams, exp_results)
     # generate_weight_distributions(hparams, exp_results)
-    # plot_early_stoping(hparams, exp_results)
+    plot_early_stoping(hparams, exp_results)
     if hparams["table"]:
         produce_tables(hparams, exp_results)
 
@@ -444,7 +444,7 @@ def plot_early_stoping(
     sorted_index = pd.Series.argsort(data_frame["Sparsity"].astype(float))[::-1]
     data_frame = data_frame.iloc[sorted_index]
 
-    fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(21, 5))
 
     left = sns.lineplot(
         x="Sparsity",
@@ -475,7 +475,7 @@ def plot_early_stoping(
     right.set(
         xlabel="Percent of Weights Remaining", ylabel="Early Stop Adv. Acc. (Val.)"
     )
-    right.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
+    right.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]]["adv_acc"])
 
     third = sns.lineplot(
         x="Sparsity",
@@ -491,7 +491,7 @@ def plot_early_stoping(
     third.set(
         xlabel="Percent of Weights Remaining", ylabel="Early Stop Test Acc. (Val.)"
     )
-    third.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]])
+    third.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]]["adv_acc"])
 
     plt.tight_layout()
 
