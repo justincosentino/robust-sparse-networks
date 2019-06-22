@@ -182,17 +182,6 @@ def plot_test_accuracies(
     ],
     filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"],
 ):
-    # Average unpruned results
-    unpruned_test_acc = []
-    for experiment, results in exp_results.items():
-        for trial in trial_iterator(hparams, experiment):
-            unpruned_test_acc.append(
-                results["{}/prune_iter_00".format(trial)]["test_acc_log"]
-            )
-            del results["{}/prune_iter_00".format(trial)]
-    unpruned_test_acc = pd.DataFrame(pd.concat(unpruned_test_acc))#.groupby(level=0)#.mean()
-    unpruned_test_acc = unpruned_test_acc.reset_index(drop=True)
-    unpruned_test_acc['Experiment'] = "100.0"
 
     test_acc = []
     for experiment, results in exp_results.items():
@@ -207,7 +196,6 @@ def plot_test_accuracies(
             data['Experiment'] = label
             test_acc.append(data)
     test_acc = pd.DataFrame(pd.concat(test_acc))
-    test_acc = pd.concat([test_acc, unpruned_test_acc])
 
     labels = test_acc['Experiment'].unique()
     
@@ -403,24 +391,6 @@ def plot_early_stoping(
     hparams, exp_results, filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"]
 ):
 
-    # Merge unpruned results
-    unpruned_early_stop_iter = []
-    for experiment, results in exp_results.items():
-        for trial in trial_iterator(hparams, experiment):
-            for label in exp_results:
-                target_iteration = get_early_stop_iteration(results["{}/prune_iter_00".format(trial)])
-                unpruned_early_stop_iter.append(
-                    (
-                        "100.0",
-                        label,
-                        results["{}/prune_iter_00".format(trial)]["valid_acc_log"]["batch"][target_iteration],
-                        # Adv accuracy for eaerly stop iteration
-                        results["{}/prune_iter_00".format(trial)]["valid_acc_log"]["adv_acc"][target_iteration], 
-                        results["{}/prune_iter_00".format(trial)]["valid_acc_log"]["acc"][target_iteration],
-                    )
-                )
-            del results["{}/prune_iter_00".format(trial)]
-
     # Builds a list of tuples (sparsity, experiment, early_stop_iteration)
     # for creating the DataFrame
     early_stop_iter = []
@@ -436,8 +406,6 @@ def plot_early_stoping(
             early_stop_acc = value["valid_acc_log"]["acc"][target_iteration]
             early_stop_iter.append((sparsity, label, early_stop_iteration, early_stop_adv_acc, early_stop_acc))
 
-    early_stop_iter.extend(unpruned_early_stop_iter)
-
     data_frame = pd.DataFrame(
         early_stop_iter, columns=["Sparsity", "Experiment", "Iteration", "Adversarial_Accuracy", "Test_Accuracy"]
     )
@@ -452,23 +420,20 @@ def plot_early_stoping(
         hue="Experiment",
         ax=axes[0],
         ci="sd",
-        err_style="bars",
-        err_kws={"capsize": 3},
         sort=False,
         data=data_frame,
     )
     left.set(
         xlabel="Percent of Weights Remaining", ylabel="Early Stop Iteration (Val.)"
     )
-
+    left.get_legend().remove()
+    
     right = sns.lineplot(
         x="Sparsity",
         y="Adversarial_Accuracy",
         hue="Experiment",
         ax=axes[1],
         ci="sd",
-        err_style="bars",
-        err_kws={"capsize": 3},
         sort=False,
         data=data_frame,
     )
@@ -476,6 +441,7 @@ def plot_early_stoping(
         xlabel="Percent of Weights Remaining", ylabel="Early Stop Adv. Acc. (Val.)"
     )
     right.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]]["adv_acc"])
+    right.get_legend().remove()
 
     third = sns.lineplot(
         x="Sparsity",
@@ -483,8 +449,6 @@ def plot_early_stoping(
         hue="Experiment",
         ax=axes[2],
         ci="sd",
-        err_style="bars",
-        err_kws={"capsize": 3},
         sort=False,
         data=data_frame,
     )
@@ -492,6 +456,27 @@ def plot_early_stoping(
         xlabel="Percent of Weights Remaining", ylabel="Early Stop Test Acc. (Val.)"
     )
     third.set(ylim=YLIMS[hparams["attack"]][hparams["dataset"]]["adv_acc"])
+    third.get_legend().remove()
+
+    left_handles, left_labels = left.get_legend_handles_labels()
+    right_handles, right_labels = right.get_legend_handles_labels()
+    third_handles, third_labels = third.get_legend_handles_labels()
+    handles = left_handles[1:] + right_handles[1:] + third_handles[1:]
+    legend_labels = left_labels[1:] + right_labels[1:] + third_labels[1:]
+
+    by_label = dict(
+        zip(legend_labels, handles)
+    )
+    
+    fig.legend(
+        by_label.values(),
+        by_label.keys(),
+        bbox_to_anchor=(0, 1.0, 1.0, 0.05),
+        loc="lower center",
+        ncol=3,
+        borderaxespad=0.0,
+        frameon=False,
+    )
 
     plt.tight_layout()
 
