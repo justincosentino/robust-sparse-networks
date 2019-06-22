@@ -60,7 +60,7 @@ def run(hparams):
     exp_results = load_all_exp_results(hparams)
     # plot_test_accuracies(hparams, exp_results)
     # generate_weight_distributions(hparams, exp_results)
-    plot_early_stoping(hparams, exp_results)
+    # plot_early_stoping(hparams, exp_results)
     if hparams["table"]:
         produce_tables(hparams, exp_results)
 
@@ -321,16 +321,9 @@ def print_all_keys(dictionary, parent_keys=""):
 def produce_tables(
     hparams, exp_results, filter_ids=["01.8", "03.6", "08.7", "16.9", "51.3", "100.0"]
 ):
-    # Create dictionary for latex tables to easily insert data by index
-    table = {}
-    for dataset in hparams["dataset"]:
-        table[dataset] = {}
-        for sparsity in filter_ids:
-            table[dataset][sparsity] = {}
-            for attack in ["normal", "fgsm", "pgd"]:
-                table[dataset][sparsity][attack] = {}
-                table[dataset][sparsity][attack] = {}
-                table[dataset][sparsity][attack] = {}
+
+    nested_dict = lambda: collections.defaultdict(nested_dict)
+    table = nested_dict()
 
     # Get data from experiment results and insert them in the table by index
     for experiment, results in exp_results.items():
@@ -346,13 +339,27 @@ def produce_tables(
                 or value["test_acc_log"]["adv_acc"][target_iteration] is None
             ):
                 continue
+            
+            if adv_training not in table[dataset][sparsity][attack]:
+                table[dataset][sparsity][attack][adv_training]["normal"] = []
+                table[dataset][sparsity][attack][adv_training]["adv"] = []          
 
-            table[dataset][sparsity]["normal"][adv_training] = round(
-                value["test_acc_log"]["acc"][target_iteration] * 100, 2
+            table[dataset][sparsity][attack][adv_training]["normal"].append(
+                value["test_acc_log"]["acc"][target_iteration]
             )
-            table[dataset][sparsity][attack][adv_training] = round(
-                value["test_acc_log"]["adv_acc"][target_iteration] * 100, 2
+            table[dataset][sparsity][attack][adv_training]["adv"].append(
+                value["test_acc_log"]["adv_acc"][target_iteration]
             )
+
+    for dataset in table:
+        for sparsity in table[dataset]:
+            for attack in table[dataset][sparsity]:
+                for adv_training in table[dataset][sparsity][attack]:
+                    for test in table[dataset][sparsity][attack][adv_training]:
+                        trials = len(table[dataset][sparsity][attack][adv_training][test])
+                        mean = np.mean(table[dataset][sparsity][attack][adv_training][test]) * 100
+                        std = np.std(table[dataset][sparsity][attack][adv_training][test]) * 100
+                        table[dataset][sparsity][attack][adv_training][test] = (mean, std, trials)
 
     # Re-format dictionary into expected input for Pandas.DataFrame.from_dict
     # Then create DataFrame and produce the latex table
@@ -361,18 +368,20 @@ def produce_tables(
         for sparsity in table[dataset]:
             column = table[dataset][sparsity]
             data_for_pandas[sparsity] = [
-                f"{column['normal']['false']} / {column['normal']['true']}",
-                f"{column['fgsm']['false']} / {column['fgsm']['true']}",
-                f"{column['pgd']['false']} / {column['pgd']['true']}",
+                f"{column['fgsm']['false']['normal'][0]:05.2f} $\pm$ {column['fgsm']['false']['normal'][1]:05.2f} ({column['fgsm']['false']['normal'][2]}) / {column['fgsm']['true']['normal'][0]:05.2f} $\pm$ {column['fgsm']['true']['normal'][1]:05.2f} ({column['fgsm']['true']['normal'][2]})",
+                f"{column['fgsm']['false']['adv'][0]:05.2f} $\pm$ {column['fgsm']['false']['adv'][1]:05.2f} ({column['fgsm']['false']['adv'][2]}) / {column['fgsm']['true']['adv'][0]:05.2f} $\pm$ {column['fgsm']['true']['adv'][1]:05.2f} ({column['fgsm']['true']['adv'][2]})",
+                f"{column['pgd']['false']['normal'][0]:05.2f} $\pm$ {column['pgd']['false']['normal'][1]:05.2f} ({column['pgd']['false']['normal'][2]}) / {column['pgd']['true']['normal'][0]:05.2f} $\pm$ {column['pgd']['true']['normal'][1]:05.2f} ({column['pgd']['true']['normal'][2]})",
+                f"{column['pgd']['false']['adv'][0]:05.2f} $\pm$ {column['pgd']['false']['adv'][1]:05.2f} ({column['pgd']['false']['adv'][2]}) / {column['pgd']['true']['adv'][0]:05.2f} $\pm$ {column['pgd']['true']['adv'][1]:05.2f} ({column['pgd']['true']['adv'][2]})",
             ]
 
+        mux = pd.MultiIndex.from_product([["FGSM", "PGD"], ["Natural", "Attack"]])
         df_for_latex = pd.DataFrame.from_dict(
-            data_for_pandas, orient="index", columns=["Natural Images", "FGSM", "PGD"]
+            data_for_pandas, orient="index", columns=mux
         )
         df_for_latex.insert(loc=0, column="Sparsity", value=df_for_latex.index)
         df_for_latex.index = df_for_latex.index.astype(float)
         df_for_latex = df_for_latex.sort_index(ascending=False)
-        latex_table = df_for_latex.to_latex(index=False)
+        latex_table = df_for_latex.to_latex(index=False, escape=False, column_format='ccccc', multicolumn_format='c')
 
         latex_output = os.path.join(hparams["table_output"], "tables")
         print("Tables in", latex_output)
