@@ -5,7 +5,7 @@ EXPERIMENTS=( "reinit_orig" )
 
 MODEL="dense-300-100"
 DATASET="fashion"
-TRIALS="4"
+TRIALS="5"
 TRAIN_ITERS="50000"
 PRUNE_ITERS="20"
 BATCH_SIZE="60"

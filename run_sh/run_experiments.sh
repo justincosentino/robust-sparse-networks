@@ -4,8 +4,8 @@ ATTACKS=( "fgsm" "pgd" )
 EXPERIMENTS=( "reinit_orig" "reinit_rand" )
 
 MODEL="dense-300-100"
-DATASET="digits"  # "fashion"
-TRIALS="1"
+DATASET="digits"
+TRIALS="5"
 TRAIN_ITERS="50000"
 PRUNE_ITERS="20"
 BATCH_SIZE="60"
