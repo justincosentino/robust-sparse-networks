@@ -2,7 +2,20 @@
 
 Empirically evaluating basic robustness properties of the winning "lottery tickets".
 
-This repository provides the code required to run experiments from "The Search for Sparse, Robust Neural Networks" by {Justin Cosentino, Federico Zaiter}, {Dan Pei and Jun Zhu}. We presented this work at the Safety and Robustness in Decision Making Workshop at the 33rd Conference on Neural Information Processing Systems (NeurIPS 2019), in Vancouver, Canada.
+This repository provides the code required to run experiments from [The Search for Sparse, Robust Neural Networks](https://arxiv.org/abs/1912.02386) by {Justin Cosentino, Federico Zaiter}, {Dan Pei and Jun Zhu}. We presented this work at the Safety and Robustness in Decision Making Workshop at the 33rd Conference on Neural Information Processing Systems (NeurIPS 2019), in Vancouver, Canada.
+
+If you find this useful, consider citing our paper:
+
+```
+@misc{cosentino2019search,
+    title={The Search for Sparse, Robust Neural Networks},
+    author={Justin Cosentino and Federico Zaiter and Dan Pei and Jun Zhu},
+    year={2019},
+    eprint={1912.02386},
+    archivePrefix={arXiv},
+    primaryClass={cs.LG}
+}
+```
 
 ## Table of Contents
 
